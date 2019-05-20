@@ -1,0 +1,7 @@
+.vscode/
+audio/
+data/
+labels/
+notes.txt
+.DS_Store
+system/cache/
