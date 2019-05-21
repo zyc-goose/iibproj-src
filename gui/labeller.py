@@ -437,7 +437,7 @@ class TextManager(Component):
         if self.uuid:
             self.setState(modified=True)
 
-
+# deprecated
 # class IntervalManager(Component):
 #     def __init__(self, parent):
 #         super().__init__(parent, 'IntervalManager', withLabel=True)

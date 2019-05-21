@@ -46,6 +46,8 @@ class BBox:
 
     def __and__(self, other):
         """Return the intersection area of two BBox objects."""
+        if self.page != other.page:
+            return 0
         return self.coords & other.coords
 
     def _type_check(self):
@@ -66,8 +68,11 @@ class BBox:
 class BBoxGroup(list):
     """A Group of BBox objects (Atomic element for alignment)."""
 
-    def __init__(self, group=()):
-        list.__init__(self, map(lambda x: BBox(**x, from_obj=True), group))
+    def __init__(self, group=(), from_obj=False):
+        if from_obj:
+            list.__init__(self, map(lambda x: BBox(**x, from_obj=True), group))
+        else:
+            list.__init__(self, group)
     
     def words(self):
         """Convert text to a list of BBoxWord objects and return the list."""
@@ -78,8 +83,32 @@ class BBoxGroup(list):
             elem.info.wid = i
         return res
     
+    def area(self):
+        return sum(x.area() for x in self)
+    
+    def page_range(self):
+        if len(self) == 0:
+            return (0, -1)
+        return (self[0].page, self[-1].page)
+    
+    def common_page_range(self, other):
+        r1 = self.page_range()
+        r2 = other.page_range()
+        p1 = max(r1[0], r2[0])
+        p2 = min(r1[1], r2[1])
+        return (p1, p2) if p1 <= p2 else None
+    
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))
+    
+    def __and__(self, other):
+        if self.common_page_range(other) is None:
+            return 0
+        ret = 0
+        for x in self:
+            for y in other:
+                ret += (x & y)
+        return ret
 
 
 class BBoxGroups(list):
@@ -99,6 +128,24 @@ class BBoxGroups(list):
                 word.info.glen = glen
             res.extend(group_words)
         return res
+    
+    def area(self):
+        return sum(x.area() for x in self)
+    
+    def page_range(self):
+        if len(self) == 0:
+            return (0, -1)
+        return (self[0].page_range()[0], self[-1].page_range()[-1])
+    
+    def __and__(self, other):
+        ret = 0
+        for gx in self:
+            for gy in other:
+                rx, ry = gx.page_range(), gy.page_range()
+                if ry[0] > rx[1]:
+                    break
+                ret += (gx & gy)
+        return ret
 
 
 class BBoxWordInfo:

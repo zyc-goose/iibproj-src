@@ -1,4 +1,4 @@
-from .BBox import BBoxGroup
+from .BBox import BBoxGroup, BBoxGroups
 from .TInterval import TIntervalGroup
 
 class Match:
@@ -6,7 +6,7 @@ class Match:
 
     def __init__(self, bbox_group, tinterval_group, from_obj=False):
         if from_obj:
-            self.bbox_group = BBoxGroup(bbox_group)
+            self.bbox_group = BBoxGroup(bbox_group, from_obj=True)
             self.tinterval_group = TIntervalGroup(tinterval_group)
         else:
             self.bbox_group = bbox_group
@@ -39,3 +39,6 @@ class Matches(list):
     
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))
+    
+    def get_bbox_groups(self):
+        return BBoxGroups(map(lambda x: x.bbox_group, self))
