@@ -8,7 +8,7 @@ from .system import System
 class ControlPanel(Component):
     def __init__(self, parent):
         super().__init__(parent, 'ControlPanel')
-        self.configure(padding=10)
+        self.configure(padding=5)
         # Mode Selector
         self.selector = ModeSelector(self)
         # Mode Container
@@ -24,15 +24,16 @@ class ControlPanel(Component):
 class ModeSelector(Component):
     def __init__(self, parent):
         super().__init__(parent, 'ModeSelector', withLabel=True)
-        self.configure(text='Mode Selector', padding=10)
+        self.configure(text='Mode Selector', padding=5)
         # Radio Buttons
         self.mode = StringVar()
         self.rbSystem = ttk.Radiobutton(self.frame, text='System', variable=self.mode, value='System', command=self.onModeChange)
         self.rbLabeller = ttk.Radiobutton(self.frame, text='Labeller', variable=self.mode, value='Labeller', command=self.onModeChange)
         # Grid Configuration
         self.frame.columnconfigure(0, weight=1)
-        self.rbSystem.grid(row=0, column=0, sticky=EW)
-        self.rbLabeller.grid(row=1, column=0, sticky=EW)
+        self.frame.columnconfigure(1, weight=1)
+        self.rbSystem.grid(row=0, column=0, sticky=W)
+        self.rbLabeller.grid(row=0, column=1, sticky=W)
         # Default Mode
         self.mode.set('Labeller')
 

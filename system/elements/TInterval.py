@@ -61,6 +61,16 @@ class TIntervalGroup(list):
     
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))
+    
+    def length(self):
+        return sum(x.length() for x in self)
+    
+    def __and__(self, other):
+        ret = 0
+        for x in self:
+            for y in other:
+                ret += (x & y)
+        return ret
 
     def reduce(self):
         """Re-organise and merge the intersecting intervals."""

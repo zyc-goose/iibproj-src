@@ -14,7 +14,7 @@ import json, os
 class Labeller(Component):
     def __init__(self, parent):
         super().__init__(parent, 'Labeller', withLabel=True)
-        self.configure(text='Labeller', padding=10)
+        self.configure(text='Labeller', padding=5)
         # Current Active File
         self.filepath = ''
         self.filebuf = Matches()
@@ -242,7 +242,7 @@ class FileManager(Component):
     def __init__(self, parent):
         assert isinstance(parent, Labeller)
         super().__init__(parent, 'FileManager', withLabel=True)
-        self.configure(text='File:', padding=10)
+        self.configure(text='File:', padding=5)
         # File IO Buttons Container
         self.buttonContainer = ttk.Frame(self.frame)
         # File IO Buttons
@@ -271,7 +271,7 @@ class FileManager(Component):
 class GroupManager(Component):
     def __init__(self, parent):
         super().__init__(parent, 'GroupManager', withLabel=True)
-        self.configure(text='Group:', padding=10)
+        self.configure(text='Group:', padding=5)
         # Buttons Container
         self.buttonContainer = ttk.Frame(self.frame)
         # Buttons
@@ -309,7 +309,7 @@ class GroupManager(Component):
 class BBoxManager(Component):
     def __init__(self, parent):
         super().__init__(parent, 'BBoxManager', withLabel=True)
-        self.configure(text='BBox:', padding=10)
+        self.configure(text='BBox:', padding=5)
         # Buttons Container
         self.buttonContainer = ttk.Frame(self.frame)
         # Buttons
@@ -368,7 +368,7 @@ class CustomText(Text):
 class TextManager(Component):
     def __init__(self, parent):
         super().__init__(parent, 'TextManager', withLabel=True)
-        self.configure(text='Text:', padding=10)
+        self.configure(text='Text:', padding=5)
         # Text Box
         self.text = CustomText(self.frame, width=20, height=5, font='Menlo')
         # Buttons
@@ -441,7 +441,7 @@ class TextManager(Component):
 # class IntervalManager(Component):
 #     def __init__(self, parent):
 #         super().__init__(parent, 'IntervalManager', withLabel=True)
-#         self.configure(text='Interval:', padding=10)
+#         self.configure(text='Interval:', padding=5)
 #         # Labels
 #         self.labelFrom = ttk.Label(self.frame, text='From:')
 #         self.labelTo = ttk.Label(self.frame, text='To:')
@@ -579,7 +579,7 @@ class TextManager(Component):
 class IntervalManager(Component):
     def __init__(self, parent):
         super().__init__(parent, 'IntervalManager', withLabel=True)
-        self.configure(text='Interval:', padding=10)
+        self.configure(text='Interval:', padding=5)
         # Audio Canvas
         self.audioCanvas = AudioCanvasLabeller(self)
         # Buttons

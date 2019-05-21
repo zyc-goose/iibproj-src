@@ -39,9 +39,12 @@ class OCREval:
         # calculate (I, D, S)
         numI = sum(map(lambda x: x[0] is None, align)) * wI
         numD = sum(map(lambda x: x[1] is None, align)) * wD
-        numS = sum(map(lambda x: x and y and x != y, align))
+        numS = sum(map(lambda x: bool(x[0] and x[1] and x[0] != x[1]), align))
         numIDS = numI + numD + numS
         numTotal = len(X)
+        print(align)
+        print(numI)
+        print(numTotal)
         return dict(all=numIDS/numTotal, I=numI/numTotal, D=numD/numTotal, S=numS/numTotal)
     
     def _type_check(self):

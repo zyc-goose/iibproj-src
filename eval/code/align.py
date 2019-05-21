@@ -8,6 +8,12 @@ class AlignEval:
     def __init__(self, ref, hyp):
         self.ref = ref
         self.hyp = hyp
+        self.result = None
+        self._type_check()
+    
+    def evaluate(self):
+        self.result = dict(recall=self.compute_recall_rate())
+        return self.result
     
     def find_matching_segments(self):
         """Find ref segments for each hyp chunks."""
@@ -27,7 +33,15 @@ class AlignEval:
         for seg in hyp_matched_segs:
             seg.reduce()
         return hyp_matched_segs
-                
+    
+    def compute_recall_rate(self):
+        hyp_matched_segs = self.find_matching_segments()
+        len_total = sum(seg.length() for seg in hyp_matched_segs)
+        len_recall = 0
+        for tg_ref, match_hyp in zip(hyp_matched_segs, self.hyp):
+            tg_hyp = match_hyp.tinterval_group
+            len_recall += (tg_ref & tg_hyp)
+        return len_recall / len_total
     
     def _type_check(self):
         assert isinstance(self.ref, Matches)
