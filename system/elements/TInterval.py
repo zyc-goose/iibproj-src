@@ -74,11 +74,16 @@ class TIntervalGroup(list):
             for y in other:
                 ret += (x & y)
         return ret
+    
+    def copy(self):
+        group = list(map(lambda x: x.copy(), self))
+        return TIntervalGroup(group, from_obj=False)
 
     def reduce(self):
         """Re-organise and merge the intersecting intervals."""
+        scopy = self.copy()
         res = []
-        for elem in sorted(self, key=lambda x: x.start):
+        for elem in sorted(scopy, key=lambda x: x.start):
             if len(res) and elem.start <= res[-1].end <= elem.end:
                 res[-1].end = elem.end
             elif len(res) == 0 or res[-1].end < elem.start:

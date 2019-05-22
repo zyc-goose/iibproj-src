@@ -22,18 +22,19 @@ class OCRTess(OCR):
     
     def update_cache_key(self):
         self.cache_key = 'OCRTess(%s, scale=%s)' % (self.filename, self.scale)
+        self.cache_key_obj = 'OCRTess(%s)' % self.filename
     
     def set_scale(self, scale):
         self.scale = scale
         self.update_cache_key()
 
     def process(self):
-        if self.cache_key in self.cache:
-            obj = self.cache[self.cache_key]
+        if self.cache_key_obj in self.cache:
+            obj = self.cache[self.cache_key_obj]
         else:
             images = self.pdf_to_images()
             obj = self.images_to_obj(images)
-            self.cache[self.cache_key] = obj
+            self.cache[self.cache_key_obj] = obj
         bbox_groups = self.obj_to_bbox_groups(obj, scale=self.scale)
         self.result = bbox_groups
         return self.result

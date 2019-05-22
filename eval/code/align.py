@@ -9,6 +9,7 @@ class AlignEval:
         self.ref = ref
         self.hyp = hyp
         self.result = None
+        self.hyp_matched_segs = None
         self._type_check()
     
     def evaluate(self):
@@ -29,16 +30,17 @@ class AlignEval:
                 if area > max_area:
                     max_gid, max_area = gid_hyp, area
             if max_gid != -1:
-                hyp_matched_segs[max_gid].extend(match_ref.tinterval_group)
+                hyp_matched_segs[max_gid].extend(match_ref.tinterval_group.copy())
+            print('%d -> %d' % (gid_ref, max_gid))
         for seg in hyp_matched_segs:
             seg.reduce()
         return hyp_matched_segs
     
     def compute_recall_rate(self):
-        hyp_matched_segs = self.find_matching_segments()
-        len_total = sum(seg.length() for seg in hyp_matched_segs)
+        self.hyp_matched_segs = self.find_matching_segments()
+        len_total = sum(seg.length() for seg in self.hyp_matched_segs)
         len_recall = 0
-        for tg_ref, match_hyp in zip(hyp_matched_segs, self.hyp):
+        for tg_ref, match_hyp in zip(self.hyp_matched_segs, self.hyp):
             tg_hyp = match_hyp.tinterval_group
             len_recall += (tg_ref & tg_hyp)
         return len_recall / len_total

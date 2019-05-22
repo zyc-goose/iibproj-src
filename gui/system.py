@@ -38,6 +38,8 @@ class System(Component):
         self.ocr = OCR()
         self.speech = Speech()
         self.align = Align(self.ocr, self.speech)
+        # Evaluation
+        self.ocrEval = self.alignEval = None
         # State
         self.setState(
             curGroupID=-1,
@@ -57,8 +59,8 @@ class System(Component):
         if self.align.result and gid > -1: # hyp
             segs = self.align.result[gid].tinterval_group
             self.audioVisualiser.sendSegments(segs, 1)
-        if self.label and gid > -1: # ref
-            segs = self.label[gid].tinterval_group
+        if self.alignEval and self.alignEval.hyp_matched_segs and gid > -1:
+            segs = self.alignEval.hyp_matched_segs[gid]
             self.audioVisualiser.sendSegments(segs, 2)
     
     def runSystem(self, scale):
