@@ -19,6 +19,7 @@ class System(Component):
         super().__init__(parent, 'System', withLabel=True)
         self.configure(text='System', padding=5)
         self.filename = None
+        self.label = None
         # Components
         self.ocrPanel = OCRPanel(self)
         self.audioVisualiser = AudioVisualiser(self)
@@ -53,15 +54,20 @@ class System(Component):
         else:
             t = '(no box selected)'
         self.ocrPanel.setState(text=t)
-        if self.align.result and gid > -1:
+        if self.align.result and gid > -1: # hyp
             segs = self.align.result[gid].tinterval_group
             self.audioVisualiser.sendSegments(segs, 1)
+        if self.label and gid > -1: # ref
+            segs = self.label[gid].tinterval_group
+            self.audioVisualiser.sendSegments(segs, 2)
     
     def runSystem(self, scale):
         if isinstance(self.ocr, OCRTess):
             self.ocr.set_scale(scale)
         self.align.process()
         self.pleaseUpdateRects()
+        if self.filename:
+            self.label = self.readLabelData(self.filename)
         if self.label is not None:
             self.evalPanel.reset()
             self.ocrEval = OCREval(self.label.get_bbox_groups(), self.align.result.get_bbox_groups())

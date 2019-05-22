@@ -125,6 +125,7 @@ class Labeller(Component):
     def fileClear(self):
         """Clear up the current buffer"""
         self.filebuf = Matches()
+        self.setState(curGroupID=-1, totalGroup=0, curBBoxID=-1, totalBBox=0)
         self.fileBufferChanged()
         self.pleaseUpdateRects()
     
@@ -159,7 +160,25 @@ class Labeller(Component):
         gid = self.state['curGroupID']
         if gid > -1:
             self.filebuf.pop(gid)
-            self.setState(curGroupID=gid-1, totalGroup=len(self.filebuf))
+            if gid - 1 > -1:
+                tblen = len(self.filebuf[gid-1].bbox_group)
+            else:
+                tblen = 0
+            self.setState(
+                curGroupID=gid-1, 
+                totalGroup=len(self.filebuf), 
+                curBBoxID=-1, 
+                totalBBox=tblen
+            )
+            self.fileBufferChanged()
+            self.pleaseUpdateRects()
+    
+    def BBoxDelete(self):
+        gid = self.state['curGroupID']
+        bid = self.state['curBBoxID']
+        if gid > -1 and bid > -1:
+            self.filebuf[gid].bbox_group.pop(bid)
+            self.setState(curBBoxID=bid-1, totalBBox=len(self.filebuf[gid].bbox_group))
             self.fileBufferChanged()
             self.pleaseUpdateRects()
 
@@ -235,7 +254,7 @@ class Labeller(Component):
     
     def handleDeselectRect(self, event):
         self.removeEmptyGroup()
-        self.setState(curGroupID=-1, curBBoxID=-1)
+        self.setState(curGroupID=-1, curBBoxID=-1, totalBBox=0)
 
         
 class FileManager(Component):
@@ -281,7 +300,7 @@ class GroupManager(Component):
         )
         self.buttonDelete = ttk.Button(self.buttonContainer)
         self.buttonDelete.configure(
-            text='Delete Group', command=self.onClickDelete
+            text='Delete Group', command=self.parent.groupDelete
         )
         # Grid Configuration
         self.frame.columnconfigure(0, weight=1)
@@ -319,7 +338,7 @@ class BBoxManager(Component):
         )
         self.buttonDelete = ttk.Button(self.buttonContainer)
         self.buttonDelete.configure(
-            text='Delete', command=self.onClickDelete
+            text='Delete', command=self.parent.BBoxDelete
         )
         # Grid Configuration
         self.frame.columnconfigure(0, weight=1)
