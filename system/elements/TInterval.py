@@ -15,6 +15,9 @@ class TInterval:
             self.start = start if start else TStamp()
             self.end = end if end else TStamp()
         self._type_check()
+    
+    def copy(self):
+        return TInterval(self.start, self.end)
 
     def length(self):
         return self.end - self.start
@@ -53,11 +56,11 @@ class TInterval:
 class TIntervalGroup(list):
     """Group of TInterval objects (atomic element for alignment)."""
     
-    def __init__(self, group=(), ISE=False):
-        """ISE: Initial Single Element"""
-        list.__init__(self, map(lambda x: TInterval(**x, from_obj=True), group))
-        if len(group) == 0 and ISE:
-            self.append(TInterval())
+    def __init__(self, group=(), from_obj=False):
+        if from_obj:
+            list.__init__(self, map(lambda x: TInterval(**x, from_obj=True), group))
+        else:
+            list.__init__(self, group)
     
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))

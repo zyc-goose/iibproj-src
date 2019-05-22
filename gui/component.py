@@ -87,10 +87,15 @@ class Component:
         the component."""
         if self.disabled:
             return None
+        self.beforeSetState()
         if isinstance(newState, dict):
             self.state.update(newState)
         self.state.update(**kwargs)
         self.afterSetState()
+    
+    def beforeSetState(self):
+        """To be implemented by user."""
+        pass
     
     def afterSetState(self):
         """To be implemented by user."""

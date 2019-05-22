@@ -37,8 +37,11 @@ class WStamp:
 class WStamps(list):
     """A List of WStamp objects."""
 
-    def __init__(self, wstamps=()):
-        list.__init__(self, map(lambda x: WStamp(**x, from_obj=True), wstamps))
+    def __init__(self, wstamps=(), from_obj=False):
+        if from_obj:
+            list.__init__(self, map(lambda x: WStamp(**x, from_obj=True), wstamps))
+        else:
+            list.__init__(self, wstamps)
     
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))

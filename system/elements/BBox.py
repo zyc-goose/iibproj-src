@@ -114,8 +114,11 @@ class BBoxGroup(list):
 class BBoxGroups(list):
     """A List of BBoxGroup objects."""
     
-    def __init__(self, groups=()):
-        list.__init__(self, map(BBoxGroup, groups))
+    def __init__(self, groups=(), from_obj=False):
+        if from_obj:
+            list.__init__(self, map(lambda x: BBoxGroup(x, from_obj=True), groups))
+        else:
+            list.__init__(self, map(lambda x: BBoxGroup(x, from_obj=False), groups))
     
     def words(self):
         """Convert text to a list of BBoxWord objects and return the list."""

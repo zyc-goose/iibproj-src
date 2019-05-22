@@ -31,7 +31,7 @@ class SpeechGC(Speech):
         wstamps = []
         for x in trans:
             wstamps.extend(x['words'])
-        self.result = WStamps(wstamps=wstamps)
+        self.result = WStamps(wstamps, from_obj=True)
         return self.result
     
     def transcribe_gcs(self, gcs_uri):

@@ -7,7 +7,7 @@ class Match:
     def __init__(self, bbox_group, tinterval_group, from_obj=False):
         if from_obj:
             self.bbox_group = BBoxGroup(bbox_group, from_obj=True)
-            self.tinterval_group = TIntervalGroup(tinterval_group)
+            self.tinterval_group = TIntervalGroup(tinterval_group, from_obj=True)
         else:
             self.bbox_group = bbox_group
             self.tinterval_group = tinterval_group
@@ -34,11 +34,14 @@ class Match:
 class Matches(list):
     """List of Match objects."""
 
-    def __init__(self, matches=()):
-        list.__init__(self, map(lambda x: Match(**x, from_obj=True), matches))
+    def __init__(self, matches=(), from_obj=False):
+        if from_obj:
+            list.__init__(self, map(lambda x: Match(**x, from_obj=True), matches))
+        else:
+            list.__init__(self, matches)
     
     def to_obj(self):
         return list(map(lambda x: x.to_obj(), self))
     
     def get_bbox_groups(self):
-        return BBoxGroups(map(lambda x: x.bbox_group, self))
+        return BBoxGroups(map(lambda x: x.bbox_group, self), from_obj=False)

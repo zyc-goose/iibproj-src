@@ -3,7 +3,7 @@ from ...aux.mydiff import MyDiff
 from ...elements.BBox import BBoxWord, BBoxWordInfo
 from ...elements.WStamp import WStamp
 from ...elements.Match import Match, Matches
-from ...elements.TInterval import TIntervalGroup
+from ...elements.TInterval import TIntervalGroup, TInterval
 from ...elements.TStamp import TStamp
 from ...cache.Cache import global_cache
 from pprint import pprint
@@ -32,7 +32,7 @@ class AlignBasic(Align):
         X, Y = self.ocr.result, self.speech.result
         matches = Matches()
         for bg in X:
-            matches.append(Match(bg, TIntervalGroup(ISE=True)))
+            matches.append(Match(bg, TIntervalGroup([TInterval()], from_obj=False)))
         tail = (BBoxWord(''), WStamp('', TStamp(puresec=self.speech.audio_len)))
         tail[0].info.set(gid=len(matches), wid=0, glen=0)
         pivots.append(tail)

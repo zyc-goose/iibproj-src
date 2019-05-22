@@ -79,7 +79,7 @@ class System(Component):
         path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../labels/%s.json' % filename))
         with open(path, 'r') as fin:
             label = json.load(fin)
-        return Matches(label)
+        return Matches(label, from_obj=True)
     
     def pleaseUpdateRects(self):
         """Notify the Canvas that new rects are available for request"""

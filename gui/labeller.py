@@ -78,17 +78,25 @@ class Labeller(Component):
                 bbox = bg[self.state['curBBoxID']]
         return bbox
     
-    def getCurrentTInt(self):
-        tint = None
+    def getCurrentTIntGroup(self):
         if self.state['curGroupID'] > -1:
             tg = self.filebuf[self.state['curGroupID']].tinterval_group
-            tint = tg[0]
-        return tint
+        else:
+            tg = None
+        return tg
     
     def pleaseUpdateRects(self):
         """Notify the Canvas that new rects are available for request"""
         event = dict(name='<PleaseUpdateRects>')
         self.emitEvent('MainFrame', event)
+    
+    def cleanFileBuf(self):
+        """Clean-up invalid entries in the file buffer."""
+        if self.filebuf is None:
+            return None
+        for m in self.filebuf:
+            tg = list(filter(lambda x: x.start < x.end, m.tinterval_group))
+            m.tinterval_group = TIntervalGroup(tg, from_obj=False)
     
     def fileOpen(self):
         filename = self.state['filename']
@@ -105,7 +113,8 @@ class Labeller(Component):
         finally:
             f.close()
         with open(path, 'r') as fin:
-            self.filebuf = Matches(json.load(fin))
+            self.filebuf = Matches(json.load(fin), from_obj=True)
+            # self.cleanFileBuf()
         self.filepath = path
         self.setState(
             modified=False,
@@ -118,6 +127,7 @@ class Labeller(Component):
         self.pleaseUpdateRects()
     
     def fileSave(self):
+        # self.cleanFileBuf()
         with open(self.filepath, 'w') as fout:
             json.dump(self.filebuf.to_obj(), fout, indent=4)
         self.setState(modified=False)
@@ -142,7 +152,7 @@ class Labeller(Component):
     
     def groupCreate(self):
         self.removeEmptyGroup()
-        m = Match(BBoxGroup(), TIntervalGroup(ISE=True))
+        m = Match(BBoxGroup(), TIntervalGroup())
         gid = self.state['curGroupID']
         gid = len(self.filebuf) if gid == -1 else gid + 1
         self.filebuf.insert(gid, m)
@@ -193,13 +203,10 @@ class Labeller(Component):
             bbox.set_text(text)
             self.fileBufferChanged()
     
-    def getTinterval(self):
-        return self.getCurrentTInt()
-    
-    def saveTInterval(self, tint):
+    def saveTIntervalGroup(self, tg):
         if self.state['curGroupID'] > -1:
-            assert isinstance(tint, TInterval)
-            self.filebuf[self.state['curGroupID']].tinterval_group[0] = tint
+            assert isinstance(tg, TIntervalGroup)
+            self.filebuf[self.state['curGroupID']].tinterval_group = tg
             self.fileBufferChanged()
     
     def handleOpenPDF(self, event):
@@ -456,144 +463,6 @@ class TextManager(Component):
         if self.uuid:
             self.setState(modified=True)
 
-# deprecated
-# class IntervalManager(Component):
-#     def __init__(self, parent):
-#         super().__init__(parent, 'IntervalManager', withLabel=True)
-#         self.configure(text='Interval:', padding=5)
-#         # Labels
-#         self.labelFrom = ttk.Label(self.frame, text='From:')
-#         self.labelTo = ttk.Label(self.frame, text='To:')
-#         self.colon1 = ttk.Label(self.frame, text=':')
-#         self.colon2 = ttk.Label(self.frame, text=':')
-#         # Entry Variables
-#         self.svFromMin = StringVar()
-#         self.svFromSec = StringVar()
-#         self.svToMin = StringVar()
-#         self.svToSec = StringVar()
-#         # Entries
-#         self.entryFromMin = ttk.Entry(self.frame, width=2, textvariable=self.svFromMin, justify='right')
-#         self.entryFromSec = ttk.Entry(self.frame, width=2, textvariable=self.svFromSec, justify='right')
-#         self.entryToMin = ttk.Entry(self.frame, width=2, textvariable=self.svToMin, justify='right')
-#         self.entryToSec = ttk.Entry(self.frame, width=2, textvariable=self.svToSec, justify='right')
-#         # Buttons
-#         self.buttonSave = ttk.Button(self.frame, text='Save', command=self.onClickSave)
-#         self.buttonRevert = ttk.Button(self.frame, text='Revert', command=self.onClickRevert)
-#         # Grid Configuration
-#         self.frame.columnconfigure(4, weight=1)
-#         self.labelFrom.grid(row=0, column=0)
-#         self.labelTo.grid(row=1, column=0)
-#         self.entryFromMin.grid(row=0, column=1)
-#         self.entryFromSec.grid(row=0, column=3)
-#         self.entryToMin.grid(row=1, column=1)
-#         self.entryToSec.grid(row=1, column=3)
-#         self.colon1.grid(row=0, column=2)
-#         self.colon2.grid(row=1, column=2)
-#         self.buttonSave.grid(row=0, column=4, sticky=E)
-#         self.buttonRevert.grid(row=1, column=4, sticky=E)
-#         # Bindings
-#         self.svFromMin.trace_add('write', self.onEntryChange)
-#         self.svFromSec.trace_add('write', self.onEntryChange)
-#         self.svToMin.trace_add('write', self.onEntryChange)
-#         self.svToSec.trace_add('write', self.onEntryChange)
-#         # State
-#         self.groupID = -1
-#         self.setState(
-#             modified=False,
-#             invalid=False,
-#             curGroupID=-1,
-#         )
-#         # State Lock
-#         self.stateLock = False
-    
-#     def afterSetState(self):
-#         # update display
-#         if self.state['curGroupID'] == -1:
-#             s = ' (inactive)'
-#         elif self.state['invalid']:
-#             s = ' (invalid input)'
-#         elif self.state['modified']:
-#             s = ' (modified)'
-#         else:
-#             s = ''
-#         self.configure(text='Interval:' + s)
-#         # load necessary stuff
-#         if self.state['curGroupID'] != self.groupID:
-#             self.enableAll()
-#             self.groupID = self.state['curGroupID']
-#             if self.groupID == -1:
-#                 self.clearAll()
-#             else:
-#                 self.onClickRevert() # load
-#         # disable if necessary
-#         if self.state['curGroupID'] == -1:
-#             self.disableAll()
-#         else:
-#             self.enableAll()
-    
-#     def isValidMin(self, s):
-#         return s.isdigit() and len(s) <= 2
-    
-#     def isValidSec(self, s):
-#         return self.isValidMin(s) and int(s) < 60
-    
-#     def validate(self):
-#         self.stateLock = True
-#         res = True
-#         if not self.isValidMin(self.svFromMin.get()):
-#             res = False; self.svFromMin.set('')
-#         elif not self.isValidSec(self.svFromSec.get()):
-#             res = False; self.svFromSec.set('')
-#         elif not self.isValidMin(self.svToMin.get()):
-#             res = False; self.svToMin.set('')
-#         elif not self.isValidSec(self.svToSec.get()):
-#             res = False; self.svToSec.set('')
-#         if not res:
-#             self.setState(invalid=True)
-#         self.stateLock = False
-#         return res
-    
-#     def onClickSave(self):
-#         if self.validate():
-#             tint = TInterval()
-#             tint.start.set(self.svFromMin.get(), self.svFromSec.get())
-#             tint.end.set(self.svToMin.get(), self.svToSec.get())
-#             self.parent.saveTInterval(tint)
-#             self.setState(modified=False, invalid=False)
-    
-#     def onClickRevert(self):
-#         self.stateLock = True
-#         tint = self.parent.getTinterval()
-#         self.svFromMin.set(tint.start.min)
-#         self.svFromSec.set(tint.start.sec)
-#         self.svToMin.set(tint.end.min)
-#         self.svToSec.set(tint.end.sec)
-#         self.setState(modified=False)
-#         self.stateLock = False
-
-#     def onEntryChange(self, *args):
-#         if not self.stateLock: # can only modify state if not locked
-#             self.setState(modified=True, invalid=False)
-    
-#     def disableAll(self):
-#         self.entryFromMin.state(['disabled'])
-#         self.entryFromSec.state(['disabled'])
-#         self.entryToMin.state(['disabled'])
-#         self.entryToSec.state(['disabled'])
-    
-#     def enableAll(self):
-#         self.entryFromMin.state(['!disabled'])
-#         self.entryFromSec.state(['!disabled'])
-#         self.entryToMin.state(['!disabled'])
-#         self.entryToSec.state(['!disabled'])
-    
-#     def clearAll(self):
-#         self.stateLock = True
-#         self.svFromMin.set('')
-#         self.svFromSec.set('')
-#         self.svToMin.set('')
-#         self.svToSec.set('')
-#         self.stateLock = False
 
 class IntervalManager(Component):
     def __init__(self, parent):
@@ -601,75 +470,71 @@ class IntervalManager(Component):
         self.configure(text='Interval:', padding=5)
         # Audio Canvas
         self.audioCanvas = AudioCanvasLabeller(self)
-        # Buttons
-        self.buttonSave = ttk.Button(self.frame, text='Save', command=self.onClickSave)
-        self.buttonRevert = ttk.Button(self.frame, text='Revert', command=self.onClickRevert)
         # Grid Configuration
         self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=1)
-        self.audioCanvas.grid(row=0, column=0, columnspan=2)
-        self.buttonSave.grid(row=1, column=0, sticky=NSEW)
-        self.buttonRevert.grid(row=1, column=1, sticky=NSEW)
+        self.audioCanvas.grid(row=0, column=0)
         # State
         self.groupID = -1
         self.curTInt = TInterval()
-        self.buttonSave.state(['disabled'])
-        self.buttonRevert.state(['disabled'])
-        self.setState(modified=False, curGroupID=-1, filename='')
+        self.curTIntGroup = TIntervalGroup()
+        self.setState(curGroupID=-1, filename='')
     
     def afterSetState(self):
         # update display
         if self.state['curGroupID'] == -1:
             s = ' (inactive)'
-        elif self.state['modified']:
-            s = ' (modified)'
         else:
             s = ''
         self.configure(text='Interval:' + s)
         # load necessary stuff
         if self.state['curGroupID'] != self.groupID:
             self.groupID = self.state['curGroupID']
+            self.curTInt = TInterval()
+            self.setCanvasTint()
             if self.groupID == -1:
-                self.buttonSave.state(['disabled'])
-                self.buttonRevert.state(['disabled'])
-                self.curTInt = TInterval()
-                self.setCanvasTInt()
+                self.curTIntGroup = TIntervalGroup()
+                self.syncSegments()
             else:
-                self.buttonSave.state(['!disabled'])
-                self.buttonRevert.state(['!disabled'])
-                self.onClickRevert() # load
+                self.curTIntGroup = self.parent.getCurrentTIntGroup()
+                self.syncSegments()
+                self.audioCanvas.focus()
         # kangsang kamida music
         filename = self.state['filename']
         if self.audioCanvas.player is None and filename:
             self.audioCanvas.initAudioPlayer(filename)
     
     def handleCanvasB1(self, ts):
-        if self.groupID == -1: # do nothing
+        if self.groupID == -1 or self.audioCanvas.switchST is None: # do nothing
             return None
         assert isinstance(ts, TStamp)
         if self.audioCanvas.switchST == 'S':
             self.curTInt.start = ts
-            self.setState(modified=True)
         elif self.audioCanvas.switchST == 'T':
             self.curTInt.end = ts
-            self.setState(modified=True)
-        self.setCanvasTInt()
+        self.setCanvasTint()
+        if self.curTInt.length() > 0 and self.audioCanvas.switchST == 'T':
+            self.curTIntGroup.append(self.curTInt.copy())
+            self.curTIntGroup.reduce()
+            self.parent.fileBufferChanged()
+            self.syncSegments()
     
-    def setCanvasTInt(self):
+    def handleCanvasKeyX(self, tsx):
+        seg_id = -1
+        for i, seg in enumerate(self.curTIntGroup):
+            if tsx > seg.start and tsx < seg.end:
+                seg_id = i
+                break
+        if seg_id != -1:
+            self.curTIntGroup.pop(seg_id)
+            self.parent.fileBufferChanged()
+            self.syncSegments()
+    
+    def setCanvasTint(self):
         self.audioCanvas.setS(self.curTInt.start)
         self.audioCanvas.setT(self.curTInt.end)
-        if self.curTInt.length() > 0:
-            self.audioCanvas.setState(Ch1Segments=[self.curTInt])
-            self.audioCanvas.focus()
     
-    def onClickSave(self):
-        self.parent.saveTInterval(self.curTInt)
-        self.setState(modified=False)
-    
-    def onClickRevert(self):
-        self.curTInt = self.parent.getTinterval()
-        self.setCanvasTInt()
-        self.setState(modified=False)
+    def syncSegments(self):
+        self.audioCanvas.setState(Ch1Segments=self.curTIntGroup)
 
 
 class AudioCanvasLabeller(AudioCanvas):
@@ -678,6 +543,12 @@ class AudioCanvasLabeller(AudioCanvas):
         self.tsS, self.tsT = TStamp(), TStamp()
         self.switchST = None
         super().__init__(parent)
+    
+    def deleteSegmentAtCursor(self):
+        if self.mouseX is None:
+            return None
+        tsx = self.CTW(self.mouseX)
+        self.parent.handleCanvasKeyX(tsx)
     
     def nextSwitchST(self, switchST):
         if switchST is None:
@@ -705,6 +576,13 @@ class AudioCanvasLabeller(AudioCanvas):
         if event.char == 's': # switch ST
             self.switchST = self.nextSwitchST(self.switchST)
             self.drawTStamps()
+        elif event.char == 'x': # delete seg at cursor
+            self.deleteSegmentAtCursor()
+    
+    def handleLeave(self, event):
+        super().handleLeave(event)
+        self.switchST = None
+        self.drawTStamps()
 
     def drawTStamps(self):
         super().drawTStamps()
