@@ -9,6 +9,7 @@ from ..system.subsystems.Speech.SpeechGC import SpeechGC, Speech
 from ..system.subsystems.Align.AlignBasic import AlignBasic, Align
 from ..system.elements.BBox import *
 from ..system.elements.Match import Match, Matches
+from ..system.aux.reflabel import RefLabel
 from ..eval.code.ocr import OCREval
 from ..eval.code.align import AlignEval
 
@@ -22,6 +23,7 @@ class System(Component):
         self.label = None
         # Components
         self.ocrPanel = OCRPanel(self)
+        self.paramPanel = ParamPanel(self)
         self.audioVisualiser = AudioVisualiser(self)
         self.evalPanel = EvalPanel(self)
         # Listeners
@@ -32,14 +34,22 @@ class System(Component):
         # Grid Configuration
         self.frame.columnconfigure(0, weight=1)
         self.ocrPanel.grid(row=0, column=0, sticky=EW)
-        self.audioVisualiser.grid(row=1, column=0)
-        self.evalPanel.grid(row=2, column=0, sticky=EW)
+        self.paramPanel.grid(row=1, column=0, sticky=EW)
+        self.audioVisualiser.grid(row=2, column=0)
+        self.evalPanel.grid(row=3, column=0, sticky=EW)
         # Subsystems
         self.ocr = OCR()
         self.speech = Speech()
         self.align = Align(self.ocr, self.speech)
         # Evaluation
         self.ocrEval = self.alignEval = None
+        # Config
+        self.config = dict(
+            scale='par',
+            gauss=None, # gaussian std (scale)
+            common=None, # common word gain
+            key=None, # key word gain
+        )
         # State
         self.setState(
             curGroupID=-1,
@@ -47,6 +57,9 @@ class System(Component):
             curBBoxID=-1,
             totalBBox=0,
         )
+    
+    def setConfig(self, **kwargs):
+        self.config.update(kwargs)
     
     def afterSetState(self):
         gid = self.state['curGroupID']
@@ -63,18 +76,23 @@ class System(Component):
             segs = self.alignEval.hyp_matched_segs[gid]
             self.audioVisualiser.sendSegments(segs, 2)
     
-    def runSystem(self, scale):
+    def runSystem(self):
         if isinstance(self.ocr, OCRTess):
-            self.ocr.set_scale(scale)
+            self.ocr.set_scale(self.config['scale'])
+        if isinstance(self.align, AlignBasic):
+            self.align.set_params(
+                gauss=self.config['gauss'],
+                common=self.config['common'],
+                key=self.config['key'],
+            )
         self.align.process()
         self.pleaseUpdateRects()
-        if self.filename:
-            self.label = self.readLabelData(self.filename)
         if self.label is not None:
+            self.label.reopen()
             self.evalPanel.reset()
-            self.ocrEval = OCREval(self.label.get_bbox_groups(), self.align.result.get_bbox_groups())
+            self.ocrEval = OCREval(self.label, self.align)
             self.evalPanel.passOCRResult(self.ocrEval.evaluate())
-            self.alignEval = AlignEval(self.label, self.align.result)
+            self.alignEval = AlignEval(self.label, self.align)
             self.evalPanel.passAlignResult(self.alignEval.evaluate())
     
     def readLabelData(self, filename):
@@ -98,7 +116,7 @@ class System(Component):
         self.align = AlignBasic(self.ocr, self.speech)
         self.audioVisualiser.initAudioPlayer(filename)
         # evaluation
-        self.label = self.readLabelData(filename)
+        self.label = RefLabel(filename)
     
     def handleRequestRects(self, event):
         rects = []
@@ -176,7 +194,59 @@ class OCRPanel(Component):
         self.textField.replace('1.0', 'end', self.state['text'])
     
     def onScaleChange(self):
-        self.parent.runSystem(scale=self.scale.get())
+        self.parent.setConfig(scale=self.scale.get())
+        self.parent.runSystem()
+
+
+class ParamPanel(Component):
+    """Panel for Parameters."""
+    def __init__(self, parent):
+        super().__init__(parent, 'ParamPanel', withLabel=True)
+        self.configure(text='Parameters', padding=5)
+        # Box - Gauss
+        self.boxGauss = ttk.Frame(self.frame)
+        self.labelGauss = ttk.Label(self.boxGauss, text='gauss=')
+        self.svGauss = StringVar()
+        self.entryGauss = ttk.Entry(self.boxGauss, textvariable=self.svGauss, width=5)
+        # Box - Common
+        self.boxCommon = ttk.Frame(self.frame)
+        self.labelCommon = ttk.Label(self.boxCommon, text='common=')
+        self.svCommon = StringVar()
+        self.entryCommon = ttk.Entry(self.boxCommon, textvariable=self.svCommon, width=5)
+        # Box - Key
+        self.boxKey = ttk.Frame(self.frame)
+        self.labelKey = ttk.Label(self.boxKey, text='key=')
+        self.svKey = StringVar()
+        self.entryKey = ttk.Entry(self.boxKey, textvariable=self.svKey, width=5)
+        # Button
+        self.buttonSet = ttk.Button(self.frame, text='set', command=self.onClickSet)
+        # Grid Configuration
+        self.boxGauss.grid(row=0, column=0)
+        self.labelGauss.grid(row=0, column=0)
+        self.entryGauss.grid(row=0, column=1)
+        self.boxCommon.grid(row=0, column=1)
+        self.labelCommon.grid(row=0, column=0)
+        self.entryCommon.grid(row=0, column=1)
+        self.boxKey.grid(row=0, column=2)
+        self.labelKey.grid(row=0, column=0)
+        self.entryKey.grid(row=0, column=1)
+        self.buttonSet.grid(row=0, column=4, sticky=E)
+    
+    def getVar(self, sv):
+        try:
+            ret = float(sv.get())
+            return ret if ret > 0 else None
+        except ValueError:
+            return None
+        return None
+    
+    def onClickSet(self):
+        self.parent.setConfig(
+            gauss=self.getVar(self.svGauss),
+            common=self.getVar(self.svCommon),
+            key=self.getVar(self.svKey),
+        )
+        self.parent.runSystem()
 
 
 class EvalPanel(Component):

@@ -130,6 +130,9 @@ class BBoxGroups(list):
                 word.info.gid = i
                 word.info.glen = glen
             res.extend(group_words)
+        N = len(res)
+        for i, elem in enumerate(res):
+            elem.info.relpos = i / N
         return res
     
     def area(self):
@@ -152,14 +155,19 @@ class BBoxGroups(list):
 
 
 class BBoxWordInfo:
-    def __init__(self, gid=None, wid=None, glen=None):
-        self.gid, self.wid, self.glen = gid, wid, glen
+    def __init__(self, gid=None, wid=None, glen=None, relpos=None):
+        """gid: group id
+           wid: word id
+           glen: group len
+           relpos: global word id / len(all words)
+        """
+        self.set(gid, wid, glen, relpos)
     
     def to_obj(self):
         return dict(gid=self.gid, wid=self.wid, glen=self.glen)
     
-    def set(self, gid=None, wid=None, glen=None):
-        self.gid, self.wid, self.glen = gid, wid, glen
+    def set(self, gid=None, wid=None, glen=None, relpos=None):
+        self.gid, self.wid, self.glen, self.relpos = gid, wid, glen, relpos
     
     def __str__(self):
         return 'BBoxWordInfo(gid=%d, wid=%d, glen=%d)' % (self.gid, self.wid, self.glen)

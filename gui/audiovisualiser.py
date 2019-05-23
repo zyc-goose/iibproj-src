@@ -291,7 +291,7 @@ class AudioCanvas(Component):
 class AudioVisualiser(Component):
     def __init__(self, parent):
         super().__init__(parent, 'AudioVisualiser', withLabel=True)
-        self.frame.configure(text='Audio Visualiser', padding=5)
+        self.frame.configure(text='Audio Visualiser')
         self.audioCanvas = AudioCanvas(self)
         # Grid Configuration
         self.audioCanvas.grid(row=0, column=0)
