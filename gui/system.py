@@ -46,6 +46,7 @@ class System(Component):
         # Config
         self.config = dict(
             scale='par',
+            lang='eng',
             gauss=None, # gaussian std (scale)
             common=None, # common word gain
             key=None, # key word gain
@@ -79,6 +80,7 @@ class System(Component):
     def runSystem(self):
         if isinstance(self.ocr, OCRTess):
             self.ocr.set_scale(self.config['scale'])
+            self.ocr.set_lang(self.config['lang'])
         if isinstance(self.align, AlignBasic):
             self.align.set_params(
                 gauss=self.config['gauss'],
@@ -94,6 +96,7 @@ class System(Component):
             self.evalPanel.passOCRResult(self.ocrEval.evaluate())
             self.alignEval = AlignEval(self.label, self.align)
             self.evalPanel.passAlignResult(self.alignEval.evaluate())
+        self.setState()
     
     def readLabelData(self, filename):
         path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../labels/%s.json' % filename))
@@ -167,6 +170,11 @@ class OCRPanel(Component):
         self.rbLine = ttk.Radiobutton(self.scaleBox, text='Line', variable=self.scale, value='line', command=self.onScaleChange)
         self.rbPar = ttk.Radiobutton(self.scaleBox, text='Paragraph', variable=self.scale, value='par', command=self.onScaleChange)
         self.rbPage = ttk.Radiobutton(self.scaleBox, text='Page', variable=self.scale, value='page', command=self.onScaleChange)
+        # Model Selector
+        self.lang = StringVar()
+        self.langBox = ttk.LabelFrame(self.frame, text='Model', padding=5)
+        self.rbEng = ttk.Radiobutton(self.langBox, text='eng', variable=self.lang, value='eng', command=self.onLangChange)
+        self.rbEngHw = ttk.Radiobutton(self.langBox, text='eng-hw', variable=self.lang, value='eng-hw', command=self.onLangChange)
         # BBoxGroup Text Viewer
         self.textBox = ttk.LabelFrame(self.frame, text='Text in the Group', padding=5)
         self.textField = Text(self.textBox, width=20, height=5, font='Menlo')
@@ -182,7 +190,12 @@ class OCRPanel(Component):
         self.rbLine.grid(row=0, column=1, sticky=W)
         self.rbPar.grid(row=0, column=2, sticky=W)
         self.rbPage.grid(row=0, column=3, sticky=W)
-        self.textBox.grid(row=1, column=0, sticky=EW)
+        self.langBox.grid(row=1, column=0, sticky=EW)
+        self.langBox.columnconfigure(0, weight=1)
+        self.langBox.columnconfigure(1, weight=1)
+        self.rbEng.grid(row=0, column=0, sticky=W)
+        self.rbEngHw.grid(row=0, column=1, sticky=W)
+        self.textBox.grid(row=2, column=0, sticky=EW)
         self.textBox.columnconfigure(0, weight=1)
         self.textField.grid(row=0, column=0, sticky=EW)
         # State
@@ -195,6 +208,10 @@ class OCRPanel(Component):
     
     def onScaleChange(self):
         self.parent.setConfig(scale=self.scale.get())
+        self.parent.runSystem()
+    
+    def onLangChange(self):
+        self.parent.setConfig(lang=self.lang.get())
         self.parent.runSystem()
 
 

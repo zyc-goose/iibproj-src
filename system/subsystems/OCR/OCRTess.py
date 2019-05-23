@@ -12,20 +12,25 @@ from ...cache.Cache import global_cache
 class OCRTess(OCR):
     """Tesseract OCR"""
 
-    def __init__(self, filename, scale='par'):
+    def __init__(self, filename, scale='par', lang='eng'):
         path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../../data/%s.pdf' % filename))
         super().__init__(path)
         self.filename = filename
         self.cache = global_cache
         self.scale = scale
+        self.lang = lang
         self.update_cache_key()
     
     def update_cache_key(self):
-        self.cache_key = 'OCRTess(%s, scale=%s)' % (self.filename, self.scale)
-        self.cache_key_obj = 'OCRTess(%s)' % self.filename
+        self.cache_key = 'OCRTess(%s, lang=%s, scale=%s)' % (self.filename, self.lang, self.scale)
+        self.cache_key_obj = 'OCRTess(%s, lang=%s)' % (self.filename, self.lang)
     
     def set_scale(self, scale):
         self.scale = scale
+        self.update_cache_key()
+    
+    def set_lang(self, lang):
+        self.lang = lang
         self.update_cache_key()
 
     def process(self):
@@ -63,7 +68,7 @@ class OCRTess(OCR):
         }
         for k, image in enumerate(images):
             printmsg.begin('Processing PIL images [%d/%d]' % (k+1, len(images)))
-            tsvdata = pytesseract.image_to_data(image)
+            tsvdata = pytesseract.image_to_data(image, lang=self.lang)
             tsvlines = tsvdata.split('\n')
             TSVBBox = namedtuple('TSVBBox', tsvlines[0])
             page_bbox = TSVBBox(*map(int, tsvlines[1].split()), None)
