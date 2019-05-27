@@ -187,9 +187,10 @@ class OCRTess(OCR):
     def extract_coords_from_page(self, page):
         """Extract coordinates from a page."""
         x0 = 10
-        x1 = page['width'] - 20
+        x1 = page['width']
         y0 = 10
-        y1 = page['height'] - 15
+        y1 = page['height']
+        print('width=', x1, 'height=', y1)
         return Coords(x0, y0, x1, y1)
 
 if __name__ == '__main__':

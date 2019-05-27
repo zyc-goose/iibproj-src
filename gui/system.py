@@ -174,7 +174,7 @@ class OCRPanel(Component):
         self.lang = StringVar()
         self.langBox = ttk.LabelFrame(self.frame, text='Model', padding=5)
         self.rbEng = ttk.Radiobutton(self.langBox, text='eng', variable=self.lang, value='eng', command=self.onLangChange)
-        self.rbEngHw = ttk.Radiobutton(self.langBox, text='eng-hw', variable=self.lang, value='eng-hw', command=self.onLangChange)
+        self.rbEngHw = ttk.Radiobutton(self.langBox, text='eng-9000', variable=self.lang, value='eng-9000', command=self.onLangChange)
         # BBoxGroup Text Viewer
         self.textBox = ttk.LabelFrame(self.frame, text='Text in the Group', padding=5)
         self.textField = Text(self.textBox, width=20, height=5, font='Menlo')
@@ -222,19 +222,19 @@ class ParamPanel(Component):
         self.configure(text='Parameters', padding=5)
         # Box - Gauss
         self.boxGauss = ttk.Frame(self.frame)
-        self.labelGauss = ttk.Label(self.boxGauss, text='gauss=')
+        self.labelGauss = ttk.Label(self.boxGauss, text='sigma=')
         self.svGauss = StringVar()
         self.entryGauss = ttk.Entry(self.boxGauss, textvariable=self.svGauss, width=5)
         # Box - Common
         self.boxCommon = ttk.Frame(self.frame)
-        self.labelCommon = ttk.Label(self.boxCommon, text='common=')
+        self.labelCommon = ttk.Label(self.boxCommon, text='alpha=')
         self.svCommon = StringVar()
         self.entryCommon = ttk.Entry(self.boxCommon, textvariable=self.svCommon, width=5)
         # Box - Key
-        self.boxKey = ttk.Frame(self.frame)
-        self.labelKey = ttk.Label(self.boxKey, text='key=')
-        self.svKey = StringVar()
-        self.entryKey = ttk.Entry(self.boxKey, textvariable=self.svKey, width=5)
+        # self.boxKey = ttk.Frame(self.frame)
+        # self.labelKey = ttk.Label(self.boxKey, text='key=')
+        # self.svKey = StringVar()
+        # self.entryKey = ttk.Entry(self.boxKey, textvariable=self.svKey, width=5)
         # Button
         self.buttonSet = ttk.Button(self.frame, text='set', command=self.onClickSet)
         # Grid Configuration
@@ -244,9 +244,9 @@ class ParamPanel(Component):
         self.boxCommon.grid(row=0, column=1)
         self.labelCommon.grid(row=0, column=0)
         self.entryCommon.grid(row=0, column=1)
-        self.boxKey.grid(row=0, column=2)
-        self.labelKey.grid(row=0, column=0)
-        self.entryKey.grid(row=0, column=1)
+        # self.boxKey.grid(row=0, column=2)
+        # self.labelKey.grid(row=0, column=0)
+        # self.entryKey.grid(row=0, column=1)
         self.buttonSet.grid(row=0, column=4, sticky=E)
     
     def getVar(self, sv):
@@ -261,7 +261,7 @@ class ParamPanel(Component):
         self.parent.setConfig(
             gauss=self.getVar(self.svGauss),
             common=self.getVar(self.svCommon),
-            key=self.getVar(self.svKey),
+            # key=self.getVar(self.svKey),
         )
         self.parent.runSystem()
 
@@ -272,7 +272,7 @@ class EvalPanel(Component):
         super().__init__(parent, 'EvalPanel', withLabel=True)
         self.configure(text='Evaluation', padding=5)
         # TreeView
-        self.tree = ttk.Treeview(self.frame, columns=('Result',), height=6)
+        self.tree = ttk.Treeview(self.frame, columns=('Result',), height=7)
         self.tree.heading('#0', text='Name')
         self.tree.heading('Result', text='Result')
         self.tree.column('#0', width=200)
@@ -286,10 +286,12 @@ class EvalPanel(Component):
     
     def passOCRResult(self, res):
         f = lambda x: ('%.2f%%' % (x * 100))
-        recall = f(res['recall'])
+        TPR = f(res['TPR'])
+        TNR = f(res['TNR'])
         werAll = f(res['WER']['all'])
         werI, werD, werS = f(res['WER']['I']), f(res['WER']['D']), f(res['WER']['S'])
-        iid1 = self.tree.insert(parent='', index='end', text='OCR-Recall', values=(recall,))
+        iid1 = self.tree.insert(parent='', index='end', text='OCR-TPR', values=(TPR,))
+        iid3 = self.tree.insert(parent='', index='end', text='OCR-TNR', values=(TNR,))
         iid2 = self.tree.insert(parent='', index='end', text='OCR-WER', values=(werAll,))
         iid21 = self.tree.insert(parent=iid2, index='end', text='I', values=(werI,))
         iid22 = self.tree.insert(parent=iid2, index='end', text='D', values=(werD,))

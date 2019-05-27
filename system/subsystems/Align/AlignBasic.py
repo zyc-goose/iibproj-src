@@ -95,6 +95,8 @@ class AlignBasic(Align):
 
     def set_jwf(self, gauss=None, common=None, key=None):
         # JWF
+        # disable key
+        key = None
         def jwf(x, y):
             if x is None or y is None or x.word != y.word:
                 return 0
@@ -106,11 +108,9 @@ class AlignBasic(Align):
             # Penalise matching common words
             if common and common > 0 and (word in self.word_lists.common_words):
                 ret *= common
-            print('common', ret)
             # Reward matching key words
             if key and key > 0 and (word in self.word_lists.key_words):
                 ret *= key
-            print('key', ret)
             # Time Constraint
             if gauss and gauss > 0:
                 s = gauss
@@ -118,7 +118,6 @@ class AlignBasic(Align):
                 y_relpos = y.tstamp.to_sec() / self.speech.audio_len
                 dx = (x.info.relpos - y_relpos) * 50 # assume a 50min lecture
                 ret *= f(dx)
-            print('gauss', ret)
             return ret
         self.jwf = jwf
 

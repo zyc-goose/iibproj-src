@@ -30,8 +30,10 @@ class OCREval:
         if self.cache_key in self.cache:
             self.result = self.cache[self.cache_key]
         else:
+            TPR, TNR = self.compute_TPR_and_TNR()
             self.result = dict(
-                recall=self.compute_recall_rate(),
+                TPR=TPR,
+                TNR=TNR,
                 WER=self.compute_text_WER()
             )
             self.cache[self.cache_key] = self.result
@@ -43,7 +45,17 @@ class OCREval:
         area_recall = (self.ref & self.hyp)
         return area_recall / area_total
     
-    def compute_text_WER(self, wI=0.5, wD=0.5, wS=1):
+    def compute_TPR_and_TNR(self):
+        """Calculate TPR and TNR."""
+        TP = (self.ref & self.hyp)
+        FP = self.hyp.area() - TP
+        FN = self.ref.area() - TP
+        TN = 1654*2339*6 - TP - FP - FN
+        TPR = TP / (TP + FN)
+        TNR = TN / (TN + FP)
+        return TPR, TNR
+    
+    def compute_text_WER(self, wI=4, wD=4, wS=6):
         """Calculate WER of the OCR text output."""
         def jwf(x, y):
             assert not (x is None and y is None)
@@ -56,8 +68,8 @@ class OCREval:
         diff = MyDiff(X, Y, jwf)
         diff_align = diff.solve()
         # calculate (I, D, S)
-        numI = sum(map(lambda x: x[0] is None, diff_align)) * wI
-        numD = sum(map(lambda x: x[1] is None, diff_align)) * wD
+        numI = sum(map(lambda x: x[0] is None, diff_align))
+        numD = sum(map(lambda x: x[1] is None, diff_align))
         numS = sum(map(lambda x: bool(x[0] and x[1] and x[0] != x[1]), diff_align))
         numIDS = numI + numD + numS
         numTotal = len(X)
